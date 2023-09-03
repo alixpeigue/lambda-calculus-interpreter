@@ -1,0 +1,85 @@
+\x.x+1
+
+Expr::Abs(
+	var = "x",
+	body = Expr::Arithmetic(
+		operation = Op::Add,
+		lhs = Expr::Var(name="x")
+		rhs = Expr::Literal(value=1)
+	)
+)
+
+(\x.x+1) 1
+
+Expr::App(
+	function = Expr::Abs(
+		var = "x"
+		body = Expr::Arithmetic(
+			operation = Op::Add
+			lhs = Expr::Var(name="x")
+			rhs = Expr::Literal(value=1)
+		)
+	)
+	parameter = Expr::Literal(value=1)
+)
+
+(\x.\y.x+y) 1 2
+
+Expr::App(
+	function = Expr::App(
+		function = Expr::Abs(
+			var = "x"
+			body = Expr::Abs(
+				var = "y"
+				body = Expr::Arithmetic(
+					operation = Op::Add
+					lhs = Expr::Var(name="x")
+					rhs = Expr::Var(name="y")
+				)
+			)
+		)
+		parameter = Expr::Literal(value=1)
+	)
+	parameter = Expr::Literal(value=2)
+)
+
+(\x.\y.y x) 1 ((\x.\y.x+y) 2)
+(\x.\y.y x) 1 \y.2+y
+(\y.y 1) \y.2+y
+(\y.2+y) 1
+2+1
+3
+
+Expr::App(
+	function = Expr::App(
+		function = Expr::Abs(
+			var = "x",
+			body = Expr::Abs(
+				var = "y",
+				body = Expr::App(
+					function = Expr::Variable(name="y")
+					parameter = Expr::Variable(name="x")
+				)
+			)
+		)
+		parameter = Expr::Literal(value=1.)
+	)
+	paramter = Expr::App(
+		function = Expr::Abs(
+			var = "x"
+			body = Expr::Abs(
+				var = "y"
+				body = Expr::Arithmetic(
+					operation = Op::Add
+					lhs = Expr::Variable(name="x")
+					rhs = Expr::Variable(name="y")
+				)
+			)
+		)
+		parameter = Expr::Literal(value=2.)
+	)
+)
+
+
+
+
