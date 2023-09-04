@@ -1,29 +1,33 @@
-use std::collections::HashMap;
+#![feature(test)]
+use std::{collections::HashMap, rc::Rc};
+
+extern crate test;
+use test::Bencher;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
     Abs {
         var: String,
-        body: Box<Expr>,
+        body: Rc<Expr>,
     },
     App {
-        function: Box<Expr>,
-        parameter: Box<Expr>,
+        function: Rc<Expr>,
+        parameter: Rc<Expr>,
     },
     Arithmetic {
         operation: ArithmeticOp,
-        lhs: Box<Expr>,
-        rhs: Box<Expr>,
+        lhs: Rc<Expr>,
+        rhs: Rc<Expr>,
     },
     Comparison {
         operation: ComparisonOp,
-        lhs: Box<Expr>,
-        rhs: Box<Expr>,
+        lhs: Rc<Expr>,
+        rhs: Rc<Expr>,
     },
     Conditional {
-        condition: Box<Expr>,
-        true_branch: Box<Expr>,
-        false_branch: Box<Expr>,
+        condition: Rc<Expr>,
+        true_branch: Rc<Expr>,
+        false_branch: Rc<Expr>,
     },
     Var {
         name: String,
@@ -84,7 +88,7 @@ pub enum EvalResult {
     Boolean(bool),
     Closure {
         var: String,
-        body: Expr,
+        body: Rc<Expr>,
         context: Env,
     },
 }
@@ -95,38 +99,38 @@ impl Expr {
     pub fn Abs(var: &str, body: Expr) -> Self {
         Expr::Abs {
             var: String::from(var),
-            body: Box::new(body),
+            body: Rc::new(body),
         }
     }
 
     pub fn App(function: Expr, parameter: Expr) -> Self {
         Expr::App {
-            function: Box::new(function),
-            parameter: Box::new(parameter),
+            function: Rc::new(function),
+            parameter: Rc::new(parameter),
         }
     }
 
     pub fn Arithmetic(operation: ArithmeticOp, lhs: Expr, rhs: Expr) -> Self {
         Expr::Arithmetic {
             operation,
-            lhs: Box::new(lhs),
-            rhs: Box::new(rhs),
+            lhs: Rc::new(lhs),
+            rhs: Rc::new(rhs),
         }
     }
 
     pub fn Comparison(operation: ComparisonOp, lhs: Expr, rhs: Expr) -> Self {
         Expr::Comparison {
             operation,
-            lhs: Box::new(lhs),
-            rhs: Box::new(rhs),
+            lhs: Rc::new(lhs),
+            rhs: Rc::new(rhs),
         }
     }
 
     pub fn Conditional(condition: Expr, true_branch: Expr, false_branch: Expr) -> Self {
         Expr::Conditional {
-            condition: Box::new(condition),
-            true_branch: Box::new(true_branch),
-            false_branch: Box::new(false_branch),
+            condition: Rc::new(condition),
+            true_branch: Rc::new(true_branch),
+            false_branch: Rc::new(false_branch),
         }
     }
 
@@ -145,28 +149,30 @@ impl Expr {
     }
 
     pub fn eval(&self) -> Result<EvalResult, String> {
-        self.eval_rec(HashMap::new())
+        self.eval_rec(&mut HashMap::new())
     }
 
-    fn eval_rec(&self, env: Env) -> Result<EvalResult, String> {
-        dbg!(&env);
+    fn eval_rec(&self, env: &Env) -> Result<EvalResult, String> {
         match self {
             Expr::Abs { var, body } => Ok(EvalResult::Closure {
-                body: *body.clone(),
+                body: Rc::clone(body),
                 var: var.clone(),
-                context: env,
+                context: env.clone(),
             }),
             Expr::App {
                 function,
                 parameter,
             } => {
-                let parameter = parameter.eval_rec(env.clone())?;
+                let parameter = parameter.eval_rec(env)?;
                 let function = function.eval_rec(env)?;
                 match function {
-                    EvalResult::Closure { var, body, context } => {
-                        let mut context = context.clone();
+                    EvalResult::Closure {
+                        var,
+                        body,
+                        mut context,
+                    } => {
                         context.insert(var, parameter);
-                        body.eval_rec(context)
+                        body.eval_rec(&context)
                     }
                     _ => Err("Could not coalesce to closure".to_string()),
                 }
@@ -176,7 +182,7 @@ impl Expr {
                 lhs,
                 rhs,
             } => {
-                let lhs = lhs.eval_rec(env.clone())?;
+                let lhs = lhs.eval_rec(env)?;
                 let rhs = rhs.eval_rec(env)?;
                 match (lhs, rhs) {
                     (EvalResult::Value(lhs), EvalResult::Value(rhs)) => {
@@ -194,7 +200,7 @@ impl Expr {
                 condition,
                 true_branch,
                 false_branch,
-            } => match condition.eval_rec(env.clone())? {
+            } => match condition.eval_rec(env)? {
                 EvalResult::Boolean(cond) => {
                     if cond {
                         true_branch.eval_rec(env)
@@ -210,7 +216,7 @@ impl Expr {
                 operation,
                 lhs,
                 rhs,
-            } => match (lhs.eval_rec(env.clone())?, rhs.eval_rec(env.clone())?) {
+            } => match (lhs.eval_rec(env)?, rhs.eval_rec(env)?) {
                 (EvalResult::Value(lhs), EvalResult::Value(rhs)) => {
                     Ok(EvalResult::Boolean(operation.eval(lhs, rhs)))
                 }
@@ -298,29 +304,8 @@ mod tests {
         assert_eq!(ast.eval(), Ok(EvalResult::Value(3.)));
     }
 
-    // #[test]
-    // fn test_fixed_point() {
-    //     let fixed_point = Expr::Abs("f", Expr::App(Expr::Var("f"), Expr::Var("f")));
-
-    //     let func = Expr::Abs(
-    //         "f",
-    //         Expr::Abs(
-    //             "x",
-    //             Expr::Conditional(
-    //                 Expr::Comparison(ComparisonOp::Neq, Expr::Var("x"), Expr::NumericLiteral(1.)),
-    //                 Expr::Arithmetic(ArithmeticOp::Sub, Expr::Var("x"), Expr::NumericLiteral(1.)),
-    //                 Expr::NumericLiteral(1.),
-    //             ),
-    //         ),
-    //     );
-
-    //     let ast = Expr::App(Expr::App(fixed_point, func), Expr::NumericLiteral(2.));
-
-    //     assert_eq!(ast.eval(), Ok(EvalResult::Value(2.)));
-    // }
-
-    #[test]
-    fn test_fib() {
+    #[bench]
+    fn test_fib(b: &mut Bencher) {
         let inner = Expr::Abs(
             "x",
             Expr::App(
@@ -365,7 +350,9 @@ mod tests {
 
         let fib = Expr::App(y_comb, fib_norec);
 
-        let fib_5 = Expr::App(fib, Expr::NumericLiteral(5.));
+        let fib_5 = Expr::App(fib, Expr::NumericLiteral(26.));
+
+        // b.iter(|| fib_5.eval());
 
         assert_eq!(fib_5.eval(), Ok(EvalResult::Value(8.)));
     }
