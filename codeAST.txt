@@ -81,5 +81,15 @@ Expr::App(
 )
 
 
+(\f.f f) (\f.\x.if x!=1 f (x-1) else 1) 2
+
+(\f.\x.if x!=1 f(x-1) else 1) (\f.\x.if x!=1 f(x-1) else 1) 2
+(\x.if x!=1 (\f.\x.if x!=1 f(x-1) else 1) x-1 else 1) 2
+if 2!=1 (\f.\x.if x!=1 f x-1 else 1) 2-1 else 1
+(\f.\x.if x!=1 f x-1 else 1) 1
+\x.if x!=1 1 x-1 else 1
 
 
+
+inner = \x.(f (\v.x x v))
+y_comb = \f.(\x.(f (\v.x x v)) \x.(f (\v.x x v)))

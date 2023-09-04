@@ -194,12 +194,12 @@ impl Expr {
                 condition,
                 true_branch,
                 false_branch,
-            } => match condition.eval_rec(env)? {
+            } => match condition.eval_rec(env.clone())? {
                 EvalResult::Boolean(cond) => {
                     if cond {
-                        true_branch.eval()
+                        true_branch.eval_rec(env)
                     } else {
-                        false_branch.eval()
+                        false_branch.eval_rec(env)
                     }
                 }
                 _ => Err(String::from(
@@ -210,11 +210,14 @@ impl Expr {
                 operation,
                 lhs,
                 rhs,
-            } => match (lhs.eval_rec(env.clone())?, rhs.eval_rec(env)?) {
+            } => match (lhs.eval_rec(env.clone())?, rhs.eval_rec(env.clone())?) {
                 (EvalResult::Value(lhs), EvalResult::Value(rhs)) => {
                     Ok(EvalResult::Boolean(operation.eval(lhs, rhs)))
                 }
-                _ => Err("Could not coalesce expression to boolean".to_string()),
+                _ => {
+                    // dbg!(env);
+                    Err("Could not coalesce expression to boolean".to_string())
+                }
             },
             Expr::BooleanLiteral { value } => Ok(EvalResult::Boolean(*value)),
         }
@@ -295,6 +298,27 @@ mod tests {
         assert_eq!(ast.eval(), Ok(EvalResult::Value(3.)));
     }
 
+    // #[test]
+    // fn test_fixed_point() {
+    //     let fixed_point = Expr::Abs("f", Expr::App(Expr::Var("f"), Expr::Var("f")));
+
+    //     let func = Expr::Abs(
+    //         "f",
+    //         Expr::Abs(
+    //             "x",
+    //             Expr::Conditional(
+    //                 Expr::Comparison(ComparisonOp::Neq, Expr::Var("x"), Expr::NumericLiteral(1.)),
+    //                 Expr::Arithmetic(ArithmeticOp::Sub, Expr::Var("x"), Expr::NumericLiteral(1.)),
+    //                 Expr::NumericLiteral(1.),
+    //             ),
+    //         ),
+    //     );
+
+    //     let ast = Expr::App(Expr::App(fixed_point, func), Expr::NumericLiteral(2.));
+
+    //     assert_eq!(ast.eval(), Ok(EvalResult::Value(2.)));
+    // }
+
     #[test]
     fn test_fib() {
         let inner = Expr::Abs(
@@ -310,26 +334,29 @@ mod tests {
         let y_comb = Expr::Abs("f", Expr::App(inner.clone(), inner));
 
         let fib_norec = Expr::Abs(
-            "x",
-            Expr::Conditional(
-                Expr::Comparison(ComparisonOp::Lt, Expr::Var("x"), Expr::NumericLiteral(2.)),
-                Expr::NumericLiteral(1.),
-                Expr::Arithmetic(
-                    ArithmeticOp::Add,
-                    Expr::App(
-                        Expr::Var("f"),
-                        Expr::Arithmetic(
-                            ArithmeticOp::Sub,
-                            Expr::Var("x"),
-                            Expr::NumericLiteral(1.),
+            "f",
+            Expr::Abs(
+                "x",
+                Expr::Conditional(
+                    Expr::Comparison(ComparisonOp::Lt, Expr::Var("x"), Expr::NumericLiteral(2.)),
+                    Expr::NumericLiteral(1.),
+                    Expr::Arithmetic(
+                        ArithmeticOp::Add,
+                        Expr::App(
+                            Expr::Var("f"),
+                            Expr::Arithmetic(
+                                ArithmeticOp::Sub,
+                                Expr::Var("x"),
+                                Expr::NumericLiteral(1.),
+                            ),
                         ),
-                    ),
-                    Expr::App(
-                        Expr::Var("f"),
-                        Expr::Arithmetic(
-                            ArithmeticOp::Sub,
-                            Expr::Var("x"),
-                            Expr::NumericLiteral(2.),
+                        Expr::App(
+                            Expr::Var("f"),
+                            Expr::Arithmetic(
+                                ArithmeticOp::Sub,
+                                Expr::Var("x"),
+                                Expr::NumericLiteral(2.),
+                            ),
                         ),
                     ),
                 ),
