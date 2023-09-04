@@ -1,51 +1,16 @@
-#![feature(test)]
+use super::ast::{ArithmeticOp, ComparisonOp, Expr};
+
 use std::{collections::HashMap, rc::Rc};
 
-extern crate test;
-use test::Bencher;
-
 #[derive(Debug, Clone, PartialEq)]
-pub enum Expr {
-    Abs {
-        var: String,
+pub enum EvalResult {
+    Value(f64),
+    Boolean(bool),
+    Closure {
+        var: Rc<str>,
         body: Rc<Expr>,
+        context: Env,
     },
-    App {
-        function: Rc<Expr>,
-        parameter: Rc<Expr>,
-    },
-    Arithmetic {
-        operation: ArithmeticOp,
-        lhs: Rc<Expr>,
-        rhs: Rc<Expr>,
-    },
-    Comparison {
-        operation: ComparisonOp,
-        lhs: Rc<Expr>,
-        rhs: Rc<Expr>,
-    },
-    Conditional {
-        condition: Rc<Expr>,
-        true_branch: Rc<Expr>,
-        false_branch: Rc<Expr>,
-    },
-    Var {
-        name: String,
-    },
-    NumericLiteral {
-        value: f64,
-    },
-    BooleanLiteral {
-        value: bool,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum ArithmeticOp {
-    Add,
-    Sub,
-    Mul,
-    Div,
 }
 
 impl ArithmeticOp {
@@ -57,16 +22,6 @@ impl ArithmeticOp {
             ArithmeticOp::Div => x / y,
         }
     }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum ComparisonOp {
-    Gt,
-    Gte,
-    Lt,
-    Lte,
-    Eq,
-    Neq,
 }
 
 impl ComparisonOp {
@@ -82,74 +37,11 @@ impl ComparisonOp {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum EvalResult {
-    Value(f64),
-    Boolean(bool),
-    Closure {
-        var: String,
-        body: Rc<Expr>,
-        context: Env,
-    },
-}
-
-type Env = HashMap<String, EvalResult>;
+type Env = HashMap<Rc<str>, EvalResult>;
 
 impl Expr {
-    pub fn Abs(var: &str, body: Expr) -> Self {
-        Expr::Abs {
-            var: String::from(var),
-            body: Rc::new(body),
-        }
-    }
-
-    pub fn App(function: Expr, parameter: Expr) -> Self {
-        Expr::App {
-            function: Rc::new(function),
-            parameter: Rc::new(parameter),
-        }
-    }
-
-    pub fn Arithmetic(operation: ArithmeticOp, lhs: Expr, rhs: Expr) -> Self {
-        Expr::Arithmetic {
-            operation,
-            lhs: Rc::new(lhs),
-            rhs: Rc::new(rhs),
-        }
-    }
-
-    pub fn Comparison(operation: ComparisonOp, lhs: Expr, rhs: Expr) -> Self {
-        Expr::Comparison {
-            operation,
-            lhs: Rc::new(lhs),
-            rhs: Rc::new(rhs),
-        }
-    }
-
-    pub fn Conditional(condition: Expr, true_branch: Expr, false_branch: Expr) -> Self {
-        Expr::Conditional {
-            condition: Rc::new(condition),
-            true_branch: Rc::new(true_branch),
-            false_branch: Rc::new(false_branch),
-        }
-    }
-
-    pub fn Var(name: &str) -> Self {
-        Expr::Var {
-            name: String::from(name),
-        }
-    }
-
-    pub fn NumericLiteral(value: f64) -> Self {
-        Expr::NumericLiteral { value }
-    }
-
-    pub fn BooleanLiteral(value: bool) -> Self {
-        Expr::BooleanLiteral { value }
-    }
-
     pub fn eval(&self) -> Result<EvalResult, String> {
-        self.eval_rec(&mut HashMap::new())
+        self.eval_rec(&HashMap::new())
     }
 
     fn eval_rec(&self, env: &Env) -> Result<EvalResult, String> {
@@ -232,7 +124,8 @@ impl Expr {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
+    use crate::ast::*;
+    use crate::interpreter::*;
 
     #[test]
     fn test_simple_addition_lamda() {
@@ -304,8 +197,8 @@ mod tests {
         assert_eq!(ast.eval(), Ok(EvalResult::Value(3.)));
     }
 
-    #[bench]
-    fn test_fib(b: &mut Bencher) {
+    #[test]
+    fn test_fib() {
         let inner = Expr::Abs(
             "x",
             Expr::App(
@@ -350,9 +243,7 @@ mod tests {
 
         let fib = Expr::App(y_comb, fib_norec);
 
-        let fib_5 = Expr::App(fib, Expr::NumericLiteral(26.));
-
-        // b.iter(|| fib_5.eval());
+        let fib_5 = Expr::App(fib, Expr::NumericLiteral(5.));
 
         assert_eq!(fib_5.eval(), Ok(EvalResult::Value(8.)));
     }
