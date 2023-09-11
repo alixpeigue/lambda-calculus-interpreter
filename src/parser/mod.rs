@@ -1,5 +1,17 @@
+pub mod error;
+
 use super::ast::Expr;
 use super::lexer::{Op, Paren, Token};
+
+enum State {
+    Any,
+}
+
+impl State {
+    fn next() -> Self {
+        todo!();
+    }
+}
 
 fn parse(tokens: &[Token]) -> Result<Expr, String> {
     todo!();
