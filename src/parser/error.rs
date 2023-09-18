@@ -2,13 +2,13 @@ use std::{error::Error, fmt::Display};
 
 use crate::lexer::Token;
 
-#[derive(Debug)]
-struct SyntaxError<'a> {
+#[derive(Debug, PartialEq)]
+pub struct SyntaxError<'a> {
     illegal_token: Token<'a>,
 }
 
 impl<'a> SyntaxError<'a> {
-    fn new(t: Token<'a>) -> Self {
+    pub fn new(t: Token<'a>) -> Self {
         Self { illegal_token: t }
     }
 }

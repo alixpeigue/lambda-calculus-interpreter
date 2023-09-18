@@ -2,13 +2,13 @@ pub mod error;
 
 use self::error::IllegalCharacterError;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Paren {
     Open,
     Close,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Op {
     Plus,
     Minus,
@@ -23,7 +23,7 @@ pub enum Op {
     Not,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub enum Token<'a> {
     Lambda,
     Identifier(&'a str),
