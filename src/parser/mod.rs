@@ -12,6 +12,7 @@ fn op_sup(op1: &Op, op2: &Op) -> bool {
 }
 
 pub fn parse<'a>(tokens: &[Token<'a>]) -> Result<Expr, SyntaxError<'a>> {
+    // dbg!(tokens);
     let tokens = remove_extra_parentheses(tokens);
 
     // Trying to match Abs:
@@ -33,7 +34,7 @@ pub fn parse<'a>(tokens: &[Token<'a>]) -> Result<Expr, SyntaxError<'a>> {
             for j in (i + 1..tokens.len()).rev() {
                 if tokens[j] == Token::Parentheses(Paren::Close) {
                     depth += 1;
-                } else if tokens[i] == Token::Parentheses(Paren::Open) {
+                } else if tokens[j] == Token::Parentheses(Paren::Open) {
                     depth -= 1;
                 }
                 if tokens[j] == Token::Colon && depth == 0 {
@@ -161,9 +162,9 @@ pub fn parse<'a>(tokens: &[Token<'a>]) -> Result<Expr, SyntaxError<'a>> {
     // Mtching variables names and literal values
 
     match tokens {
-        [Token::Identifier(id)] if id.starts_with(|c: char| c.is_alphabetic()) => Ok(Expr::Var(id)),
         [Token::Identifier(id)] if *id == "true" => Ok(Expr::BooleanLiteral(true)),
         [Token::Identifier(id)] if *id == "false" => Ok(Expr::BooleanLiteral(false)),
+        [Token::Identifier(id)] if id.starts_with(|c: char| c.is_alphabetic()) => Ok(Expr::Var(id)),
         [Token::Identifier(id)] => {
             if let Ok(n) = id.parse::<f64>() {
                 Ok(Expr::NumericLiteral(n))

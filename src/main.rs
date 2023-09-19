@@ -11,8 +11,7 @@ mod parser;
 fn main() {
     let mut buf = String::new();
     stdin().read_line(&mut buf).unwrap();
-    println!(
-        "{:?}",
-        parse(&lexer(buf.trim()).unwrap()).unwrap().eval().unwrap()
-    );
+    let tokens = lexer(buf.trim()).unwrap();
+    let ast = parse(&tokens).unwrap();
+    println!("{:?}", ast.eval().unwrap());
 }
