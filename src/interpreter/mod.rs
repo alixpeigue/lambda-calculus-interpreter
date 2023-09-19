@@ -1,6 +1,10 @@
+pub mod error;
+
+use self::error::InterpreterError;
+
 use super::ast::{ArithmeticOp, ComparisonOp, Expr};
 
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, rc::Rc, error::Error};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum EvalResult {
@@ -40,11 +44,11 @@ impl ComparisonOp {
 type Env = HashMap<Rc<str>, EvalResult>;
 
 impl Expr {
-    pub fn eval(&self) -> Result<EvalResult, String> {
+    pub fn eval(&self) -> Result<EvalResult, InterpreterError> {
         self.eval_rec(&HashMap::new())
     }
 
-    fn eval_rec(&self, env: &Env) -> Result<EvalResult, String> {
+    fn eval_rec(&self, env: &Env) -> Result<EvalResult, InterpreterError> {
         match self {
             Expr::Abs { var, body } => Ok(EvalResult::Closure {
                 body: Rc::clone(body),
@@ -66,7 +70,7 @@ impl Expr {
                         context.insert(var, parameter);
                         body.eval_rec(&context)
                     }
-                    _ => Err("Could not coalesce to closure".to_string()),
+                    other => Err(InterpreterError::new_type_error("Closure", &format!("{:?}", other))),
                 }
             }
             Expr::Arithmetic {
@@ -80,13 +84,13 @@ impl Expr {
                     (EvalResult::Value(lhs), EvalResult::Value(rhs)) => {
                         Ok(EvalResult::Value(operation.eval(lhs, rhs)))
                     }
-                    _ => Err("Could not coalesce expression to value".to_string()),
+                    other => Err(InterpreterError::new_type_error("Value", &format!("{:?}", other))),
                 }
             }
             Expr::Var { name } => env
                 .get(name)
                 .cloned()
-                .ok_or(format!("Variable {name} cannot be bound")),
+                .ok_or(InterpreterError::new_name_error(name)),
             Expr::NumericLiteral { value } => Ok(EvalResult::Value(*value)),
             Expr::Conditional {
                 condition,
@@ -100,9 +104,7 @@ impl Expr {
                         false_branch.eval_rec(env)
                     }
                 }
-                _ => Err(String::from(
-                    "Could not coalesce expression to boolean value",
-                )),
+                other => Err(InterpreterError::new_type_error("Boolean", &format!("{:?}", other))),
             },
             Expr::Comparison {
                 operation,
@@ -112,9 +114,9 @@ impl Expr {
                 (EvalResult::Value(lhs), EvalResult::Value(rhs)) => {
                     Ok(EvalResult::Boolean(operation.eval(lhs, rhs)))
                 }
-                _ => {
+                (EvalResult::Value(_), other) | (other, _) => {
                     // dbg!(env);
-                    Err("Could not coalesce expression to boolean".to_string())
+                    Err(InterpreterError::new_type_error("Value", &format!("{:?}", other)))
                 }
             },
             Expr::BooleanLiteral { value } => Ok(EvalResult::Boolean(*value)),
