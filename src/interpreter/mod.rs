@@ -1,10 +1,17 @@
 pub mod error;
 
+use crate::{lexer::lexer, parser::parse};
+
 use self::error::InterpreterError;
 
 use super::ast::{ArithmeticOp, ComparisonOp, Expr};
 
-use std::{collections::HashMap, rc::Rc, error::Error};
+use std::{
+    collections::HashMap,
+    error::Error,
+    fmt::{write, Display},
+    rc::Rc,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum EvalResult {
@@ -15,6 +22,16 @@ pub enum EvalResult {
         body: Rc<Expr>,
         context: Env,
     },
+}
+
+impl Display for EvalResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EvalResult::Value(val) => write!(f, "{}", val),
+            EvalResult::Boolean(val) => write!(f, "{}", val),
+            EvalResult::Closure { .. } => write!(f, "Closure"),
+        }
+    }
 }
 
 impl ArithmeticOp {
@@ -70,7 +87,10 @@ impl Expr {
                         context.insert(var, parameter);
                         body.eval_rec(&context)
                     }
-                    other => Err(InterpreterError::new_type_error("Closure", &format!("{:?}", other))),
+                    other => Err(InterpreterError::new_type_error(
+                        "Closure",
+                        &format!("{:?}", other),
+                    )),
                 }
             }
             Expr::Arithmetic {
@@ -84,7 +104,10 @@ impl Expr {
                     (EvalResult::Value(lhs), EvalResult::Value(rhs)) => {
                         Ok(EvalResult::Value(operation.eval(lhs, rhs)))
                     }
-                    other => Err(InterpreterError::new_type_error("Value", &format!("{:?}", other))),
+                    other => Err(InterpreterError::new_type_error(
+                        "Value",
+                        &format!("{:?}", other),
+                    )),
                 }
             }
             Expr::Var { name } => env
@@ -104,7 +127,10 @@ impl Expr {
                         false_branch.eval_rec(env)
                     }
                 }
-                other => Err(InterpreterError::new_type_error("Boolean", &format!("{:?}", other))),
+                other => Err(InterpreterError::new_type_error(
+                    "Boolean",
+                    &format!("{:?}", other),
+                )),
             },
             Expr::Comparison {
                 operation,
@@ -116,12 +142,19 @@ impl Expr {
                 }
                 (EvalResult::Value(_), other) | (other, _) => {
                     // dbg!(env);
-                    Err(InterpreterError::new_type_error("Value", &format!("{:?}", other)))
+                    Err(InterpreterError::new_type_error(
+                        "Value",
+                        &format!("{:?}", other),
+                    ))
                 }
             },
             Expr::BooleanLiteral { value } => Ok(EvalResult::Boolean(*value)),
         }
     }
+}
+
+pub fn execute(program: &str) -> Result<EvalResult, Box<dyn Error>> {
+    Ok(parse(&lexer(program)?)?.eval()?)
 }
 
 #[cfg(test)]

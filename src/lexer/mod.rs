@@ -24,14 +24,20 @@ pub enum Op {
 }
 
 #[derive(PartialEq, Debug, Clone)]
-pub enum Token<'a> {
+pub enum Token {
     Lambda,
-    Identifier(&'a str),
+    Identifier(String),
     Dot,
     Parentheses(Paren),
     Colon,
     QuestionMark,
     Operator(Op),
+}
+
+impl Token {
+    pub fn identifier(s: &str) -> Self {
+        Self::Identifier(s.to_owned())
+    }
 }
 
 pub fn lexer(prog: &str) -> Result<Vec<Token>, IllegalCharacterError> {
@@ -41,7 +47,7 @@ pub fn lexer(prog: &str) -> Result<Vec<Token>, IllegalCharacterError> {
         let sep = matched.chars().next().unwrap(); // should never panic
         let between = &prog[last..index];
         if (!between.chars().any(|c| !c.is_alphanumeric())) && between.len() > 0 {
-            res.push(Token::Identifier(between));
+            res.push(Token::Identifier(between.to_owned()));
         }
         last = index + 1;
         let token = match sep {
@@ -77,7 +83,7 @@ pub fn lexer(prog: &str) -> Result<Vec<Token>, IllegalCharacterError> {
     }
     let between = &prog[last..prog.len()];
     if (!between.chars().any(|c| !c.is_alphanumeric())) && between.len() > 0 {
-        res.push(Token::Identifier(between));
+        res.push(Token::Identifier(between.to_owned()));
     }
     Ok(res)
 }
@@ -92,9 +98,9 @@ mod tests {
             lexer(r"\x.x"),
             Ok(vec![
                 Token::Lambda,
-                Token::Identifier("x"),
+                Token::identifier("x"),
                 Token::Dot,
-                Token::Identifier("x")
+                Token::identifier("x")
             ])
         );
 
@@ -103,13 +109,13 @@ mod tests {
             Ok(vec![
                 Token::Parentheses(Paren::Open),
                 Token::Lambda,
-                Token::Identifier("x"),
+                Token::identifier("x"),
                 Token::Dot,
-                Token::Identifier("x"),
+                Token::identifier("x"),
                 Token::Operator(Op::Plus),
-                Token::Identifier("1"),
+                Token::identifier("1"),
                 Token::Parentheses(Paren::Close),
-                Token::Identifier("1"),
+                Token::identifier("1"),
             ])
         );
     }
@@ -120,9 +126,9 @@ mod tests {
         assert_eq!(
             lexer(r"x!=y"),
             Ok(vec![
-                Token::Identifier("x"),
+                Token::identifier("x"),
                 Token::Operator(Op::Neq),
-                Token::Identifier("y")
+                Token::identifier("y")
             ])
         );
     }
@@ -134,30 +140,30 @@ mod tests {
             lexer(r"\f.\x. x>2 ? f(x-1) + f(x-2) : 1"),
             Ok(vec![
                 Lambda,
-                Identifier("f"),
+                Token::identifier("f"),
                 Dot,
                 Lambda,
-                Identifier("x"),
+                Token::identifier("x"),
                 Dot,
-                Identifier("x"),
+                Token::identifier("x"),
                 Operator(Op::Sup),
-                Identifier("2"),
+                Token::identifier("2"),
                 QuestionMark,
-                Identifier("f"),
+                Token::identifier("f"),
                 Parentheses(Paren::Open),
-                Identifier("x"),
+                Token::identifier("x"),
                 Operator(Op::Minus),
-                Identifier("1"),
+                Token::identifier("1"),
                 Parentheses(Paren::Close),
                 Operator(Op::Plus),
-                Identifier("f"),
+                Token::identifier("f"),
                 Parentheses(Paren::Open),
-                Identifier("x"),
+                Token::identifier("x"),
                 Operator(Op::Minus),
-                Identifier("2"),
+                Token::identifier("2"),
                 Parentheses(Paren::Close),
                 Colon,
-                Identifier("1")
+                Token::identifier("1")
             ])
         );
     }

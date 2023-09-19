@@ -11,7 +11,7 @@ fn op_sup(op1: &Op, op2: &Op) -> bool {
     (*op1 == Op::Asterisk || *op1 == Op::Slash) && (*op2 == Op::Plus || *op2 == Op::Minus)
 }
 
-pub fn parse<'a>(tokens: &[Token<'a>]) -> Result<Expr, SyntaxError<'a>> {
+pub fn parse(tokens: &[Token]) -> Result<Expr, SyntaxError> {
     // dbg!(tokens);
     let tokens = remove_extra_parentheses(tokens);
 
@@ -178,7 +178,7 @@ pub fn parse<'a>(tokens: &[Token<'a>]) -> Result<Expr, SyntaxError<'a>> {
     // Ok(Expr::Var("a"))
 }
 
-fn remove_extra_parentheses<'a, 'b>(tokens: &'a [Token<'b>]) -> &'a [Token<'b>] {
+fn remove_extra_parentheses(tokens: &[Token]) -> &[Token] {
     if tokens.len() == 0 {
         return tokens;
     }
@@ -210,9 +210,9 @@ mod tests {
         assert_eq!(
             parse(&vec![
                 Token::Lambda,
-                Token::Identifier("x"),
+                Token::identifier("x"),
                 Token::Dot,
-                Token::Identifier("x")
+                Token::identifier("x")
             ]),
             Ok(Expr::Abs("x", Expr::Var("x")))
         );
@@ -220,11 +220,11 @@ mod tests {
             parse(&vec![
                 Token::Parentheses(Paren::Open),
                 Token::Lambda,
-                Token::Identifier("x"),
+                Token::identifier("x"),
                 Token::Dot,
-                Token::Identifier("x"),
+                Token::identifier("x"),
                 Token::Parentheses(Paren::Close),
-                Token::Identifier("1")
+                Token::identifier("1")
             ]),
             Ok(Expr::App(
                 Expr::Abs("x", Expr::Var("x")),

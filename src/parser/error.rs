@@ -3,19 +3,19 @@ use std::{error::Error, fmt::Display};
 use crate::lexer::Token;
 
 #[derive(Debug, PartialEq)]
-pub struct SyntaxError<'a> {
-    illegal_token: Token<'a>,
+pub struct SyntaxError {
+    illegal_token: Token,
 }
 
-impl<'a> SyntaxError<'a> {
-    pub fn new(t: Token<'a>) -> Self {
+impl SyntaxError {
+    pub fn new(t: Token) -> Self {
         Self { illegal_token: t }
     }
 }
 
-impl<'a> Error for SyntaxError<'a> {}
+impl Error for SyntaxError {}
 
-impl<'a> Display for SyntaxError<'a> {
+impl Display for SyntaxError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

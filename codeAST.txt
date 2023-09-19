@@ -93,3 +93,5 @@ if 2!=1 (\f.\x.if x!=1 f x-1 else 1) 2-1 else 1
 
 inner = \x.(f (\v.x x v))
 y_comb = \f.(\x.(f (\v.x x v)) \x.(f (\v.x x v)))
+
+(\f.(\x.(f (\v.x x v))) \x.(f (\v.x x v))) (\f.\x.x<2?1:(f x-1) + (f x-2)) 25

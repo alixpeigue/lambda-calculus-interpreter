@@ -2,6 +2,13 @@
 
 This is a simple interpreter for lambda calculus
 
+## Use
+
+You can use the interpreter in two modes :
+
+ - Interactive mode if you provide no arguments
+ - File mode if you provide the name of a file
+
 ## Syntax
 
 ### Abstractions
