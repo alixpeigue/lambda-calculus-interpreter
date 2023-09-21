@@ -1,11 +1,10 @@
 pub mod error;
 
-use error::SyntaxError;
-
-use crate::ast::{ArithmeticOp, ComparisonOp};
-
-use super::ast::Expr;
-use super::lexer::{Op, Paren, Token};
+use crate::{
+    ast::{ArithmeticOp, ComparisonOp, Expr},
+    lexer::{Op, Paren, Token},
+    parser::error::SyntaxError,
+};
 
 fn op_sup(op1: &Op, op2: &Op) -> bool {
     (*op1 == Op::Asterisk || *op1 == Op::Slash) && (*op2 == Op::Plus || *op2 == Op::Minus)

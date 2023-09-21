@@ -1,17 +1,13 @@
 pub mod error;
 
-use crate::{lexer::lexer, parser::parse};
-
-use self::error::InterpreterError;
-
-use super::ast::{ArithmeticOp, ComparisonOp, Expr};
-
-use std::{
-    collections::HashMap,
-    error::Error,
-    fmt::Display,
-    rc::Rc,
+use crate::{
+    ast::{ArithmeticOp, ComparisonOp, Expr},
+    interpreter::error::InterpreterError,
+    lexer::lexer,
+    parser::parse,
 };
+
+use std::{collections::HashMap, error::Error, fmt::Display, rc::Rc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum EvalResult {

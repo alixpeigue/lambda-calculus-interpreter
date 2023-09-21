@@ -1,6 +1,6 @@
 pub mod error;
 
-use self::error::LexerError;
+use crate::lexer::error::LexerError;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Paren {
