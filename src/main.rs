@@ -33,11 +33,10 @@ fn interactive_mode() {
         buf.clear();
         print!(">>> ");
         let _ = stdout().flush();
-        stdin().read_line(&mut buf).unwrap();
-        let buf = buf.trim();
-        if buf == "quit" {
+        if stdin().read_line(&mut buf).unwrap() == 0 || buf.trim() == "quit" {
             return;
-        }
+        };
+        let buf = buf.trim();
         match execute(buf) {
             Ok(result) => println!("{}", result),
             Err(error) => eprintln!("{}", error),

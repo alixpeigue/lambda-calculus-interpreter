@@ -1,6 +1,6 @@
 pub mod error;
 
-use self::error::IllegalCharacterError;
+use self::error::LexerError;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Paren {
@@ -40,14 +40,18 @@ impl Token {
     }
 }
 
-pub fn lexer(prog: &str) -> Result<Vec<Token>, IllegalCharacterError> {
+pub fn lexer(prog: &str) -> Result<Vec<Token>, LexerError> {
+    if prog.len() == 0 {
+        return Err(LexerError::EmptyProgramError);
+    }
+
     let mut last = 0;
     let mut res = vec![];
     for (index, matched) in prog.match_indices(|c: char| !c.is_alphanumeric()) {
         let sep = matched.chars().next().unwrap(); // should never panic
         let between = &prog[last..index];
         if (!between.chars().any(|c| !c.is_alphanumeric())) && between.len() > 0 {
-            res.push(Token::Identifier(between.to_owned()));
+            res.push(Token::identifier(between));
         }
         last = index + 1;
         let token = match sep {
@@ -66,7 +70,7 @@ pub fn lexer(prog: &str) -> Result<Vec<Token>, IllegalCharacterError> {
             '=' => match res.pop() {
                 Some(el) => match el {
                     Token::Operator(Op::Sup) => Token::Operator(Op::SupEq),
-                    Token::Operator(Op::Inf) => Token::Operator(Op::SupEq),
+                    Token::Operator(Op::Inf) => Token::Operator(Op::InfEq),
                     Token::Operator(Op::Not) => Token::Operator(Op::Neq),
                     other => {
                         res.push(other);
@@ -77,7 +81,7 @@ pub fn lexer(prog: &str) -> Result<Vec<Token>, IllegalCharacterError> {
             },
             '!' => Token::Operator(Op::Not),
             ' ' => continue,
-            other => return Err(IllegalCharacterError::new(other)),
+            other => return Err(LexerError::IllegalCharacterError(other)),
         };
         res.push(token);
     }

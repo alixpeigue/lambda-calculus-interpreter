@@ -9,7 +9,7 @@ use super::ast::{ArithmeticOp, ComparisonOp, Expr};
 use std::{
     collections::HashMap,
     error::Error,
-    fmt::{write, Display},
+    fmt::Display,
     rc::Rc,
 };
 
@@ -164,69 +164,69 @@ mod tests {
 
     #[test]
     fn test_simple_addition_lamda() {
-        let ast = Expr::App(
-            Expr::Abs(
+        let ast = Expr::app(
+            Expr::abs(
                 "x",
-                Expr::Arithmetic(ArithmeticOp::Add, Expr::Var("x"), Expr::NumericLiteral(1.)),
+                Expr::arithmetic(ArithmeticOp::Add, Expr::var("x"), Expr::numeric_literal(1.)),
             ),
-            Expr::NumericLiteral(1.),
+            Expr::numeric_literal(1.),
         );
         assert_eq!(ast.eval(), Ok(EvalResult::Value(2.)));
     }
 
     #[test]
     fn test_simple_comparison() {
-        let ast = Expr::Comparison(
+        let ast = Expr::comparison(
             ComparisonOp::Gt,
-            Expr::NumericLiteral(2.),
-            Expr::NumericLiteral(1.),
+            Expr::numeric_literal(2.),
+            Expr::numeric_literal(1.),
         );
         assert_eq!(ast.eval(), Ok(EvalResult::Boolean(true)))
     }
 
     #[test]
     fn test_simple_conditional() {
-        let ast = Expr::Conditional(
-            Expr::BooleanLiteral(true),
-            Expr::NumericLiteral(1.),
-            Expr::NumericLiteral(2.),
+        let ast = Expr::conditional(
+            Expr::boolean_literal(true),
+            Expr::numeric_literal(1.),
+            Expr::numeric_literal(2.),
         );
         assert_eq!(ast.eval(), Ok(EvalResult::Value(1.)))
     }
 
     #[test]
     fn test_conditional_comparison() {
-        let ast = Expr::Conditional(
-            Expr::Comparison(
+        let ast = Expr::conditional(
+            Expr::comparison(
                 ComparisonOp::Gt,
-                Expr::NumericLiteral(1.),
-                Expr::NumericLiteral(2.),
+                Expr::numeric_literal(1.),
+                Expr::numeric_literal(2.),
             ),
-            Expr::NumericLiteral(1.),
-            Expr::NumericLiteral(2.),
+            Expr::numeric_literal(1.),
+            Expr::numeric_literal(2.),
         );
         assert_eq!(ast.eval(), Ok(EvalResult::Value(2.)));
     }
 
     #[test]
     fn complex_case_ast() {
-        let ast = Expr::App(
-            Expr::App(
-                Expr::Abs(
+        let ast = Expr::app(
+            Expr::app(
+                Expr::abs(
                     "x",
-                    Expr::Abs("y", Expr::App(Expr::Var("y"), Expr::Var("x"))),
+                    Expr::abs("y", Expr::app(Expr::var("y"), Expr::var("x"))),
                 ),
-                Expr::NumericLiteral(1.),
+                Expr::numeric_literal(1.),
             ),
-            Expr::App(
-                Expr::Abs(
+            Expr::app(
+                Expr::abs(
                     "x",
-                    Expr::Abs(
+                    Expr::abs(
                         "y",
-                        Expr::Arithmetic(ArithmeticOp::Add, Expr::Var("x"), Expr::Var("y")),
+                        Expr::arithmetic(ArithmeticOp::Add, Expr::var("x"), Expr::var("y")),
                     ),
                 ),
-                Expr::NumericLiteral(2.),
+                Expr::numeric_literal(2.),
             ),
         );
         assert_eq!(ast.eval(), Ok(EvalResult::Value(3.)));
@@ -234,41 +234,41 @@ mod tests {
 
     #[test]
     fn test_fib() {
-        let inner = Expr::Abs(
+        let inner = Expr::abs(
             "x",
-            Expr::App(
-                Expr::Var("f"),
-                Expr::Abs(
+            Expr::app(
+                Expr::var("f"),
+                Expr::abs(
                     "v",
-                    Expr::App(Expr::App(Expr::Var("x"), Expr::Var("x")), Expr::Var("v")),
+                    Expr::app(Expr::app(Expr::var("x"), Expr::var("x")), Expr::var("v")),
                 ),
             ),
         );
-        let y_comb = Expr::Abs("f", Expr::App(inner.clone(), inner));
+        let y_comb = Expr::abs("f", Expr::app(inner.clone(), inner));
 
-        let fib_norec = Expr::Abs(
+        let fib_norec = Expr::abs(
             "f",
-            Expr::Abs(
+            Expr::abs(
                 "x",
-                Expr::Conditional(
-                    Expr::Comparison(ComparisonOp::Lt, Expr::Var("x"), Expr::NumericLiteral(2.)),
-                    Expr::NumericLiteral(1.),
-                    Expr::Arithmetic(
+                Expr::conditional(
+                    Expr::comparison(ComparisonOp::Lt, Expr::var("x"), Expr::numeric_literal(2.)),
+                    Expr::numeric_literal(1.),
+                    Expr::arithmetic(
                         ArithmeticOp::Add,
-                        Expr::App(
-                            Expr::Var("f"),
-                            Expr::Arithmetic(
+                        Expr::app(
+                            Expr::var("f"),
+                            Expr::arithmetic(
                                 ArithmeticOp::Sub,
-                                Expr::Var("x"),
-                                Expr::NumericLiteral(1.),
+                                Expr::var("x"),
+                                Expr::numeric_literal(1.),
                             ),
                         ),
-                        Expr::App(
-                            Expr::Var("f"),
-                            Expr::Arithmetic(
+                        Expr::app(
+                            Expr::var("f"),
+                            Expr::arithmetic(
                                 ArithmeticOp::Sub,
-                                Expr::Var("x"),
-                                Expr::NumericLiteral(2.),
+                                Expr::var("x"),
+                                Expr::numeric_literal(2.),
                             ),
                         ),
                     ),
@@ -276,9 +276,9 @@ mod tests {
             ),
         );
 
-        let fib = Expr::App(y_comb, fib_norec);
+        let fib = Expr::app(y_comb, fib_norec);
 
-        let fib_5 = Expr::App(fib, Expr::NumericLiteral(5.));
+        let fib_5 = Expr::app(fib, Expr::numeric_literal(5.));
 
         assert_eq!(fib_5.eval(), Ok(EvalResult::Value(8.)));
     }

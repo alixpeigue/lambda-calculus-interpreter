@@ -1,24 +1,24 @@
 use std::{error::Error, fmt::Display};
 
 #[derive(Debug, PartialEq)]
-pub struct IllegalCharacterError {
-    c: char,
+pub enum LexerError {
+    IllegalCharacterError(char),
+    EmptyProgramError,
 }
 
-impl IllegalCharacterError {
-    pub fn new(c: char) -> Self {
-        Self { c }
-    }
-}
+impl Error for LexerError {}
 
-impl Error for IllegalCharacterError {}
-
-impl Display for IllegalCharacterError {
+impl Display for LexerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Illegal Character Error: character '{}' is an illegal character",
-            self.c
-        )
+        match self {
+            Self::IllegalCharacterError(c) => write!(
+                f,
+                "Illegal Character Error: character '{}' is an illegal character",
+                c
+            ),
+            Self::EmptyProgramError => {
+                write!(f, "Empty Program Error : the provided program is empty")
+            }
+        }
     }
 }

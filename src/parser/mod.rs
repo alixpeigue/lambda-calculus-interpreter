@@ -17,12 +17,11 @@ pub fn parse(tokens: &[Token]) -> Result<Expr, SyntaxError> {
 
     // Trying to match Abs:
     if let [Token::Lambda, Token::Identifier(id), Token::Dot, rest @ ..] = tokens {
-        return Ok(Expr::Abs(id, parse(rest)?));
+        return Ok(Expr::abs(id, parse(rest)?));
     }
 
     // Trying to match Conditional
     let mut depth = 0;
-    let mut found_question_mark = false;
     for i in 0..tokens.len() {
         if tokens[i] == Token::Parentheses(Paren::Close) {
             depth += 1;
@@ -38,7 +37,7 @@ pub fn parse(tokens: &[Token]) -> Result<Expr, SyntaxError> {
                     depth -= 1;
                 }
                 if tokens[j] == Token::Colon && depth == 0 {
-                    return Ok(Expr::Conditional(
+                    return Ok(Expr::conditional(
                         parse(&tokens[0..i])?,
                         parse(&tokens[i + 1..j])?,
                         parse(&tokens[j + 1..tokens.len()])?,
@@ -67,7 +66,7 @@ pub fn parse(tokens: &[Token]) -> Result<Expr, SyntaxError> {
                         continue
                     }
                     _ => {
-                        return Ok(Expr::App(
+                        return Ok(Expr::app(
                             parse(&tokens[0..i])?,
                             parse(&tokens[i..tokens.len()])?,
                         ))
@@ -105,52 +104,52 @@ pub fn parse(tokens: &[Token]) -> Result<Expr, SyntaxError> {
     if index != 0 {
         use Token::*;
         return match tokens[index] {
-            Operator(Op::Plus) => Ok(Expr::Arithmetic(
+            Operator(Op::Plus) => Ok(Expr::arithmetic(
                 ArithmeticOp::Add,
                 parse(&tokens[0..index])?,
                 parse(&tokens[index + 1..])?,
             )),
-            Operator(Op::Minus) => Ok(Expr::Arithmetic(
+            Operator(Op::Minus) => Ok(Expr::arithmetic(
                 ArithmeticOp::Sub,
                 parse(&tokens[0..index])?,
                 parse(&tokens[index + 1..])?,
             )),
-            Operator(Op::Asterisk) => Ok(Expr::Arithmetic(
+            Operator(Op::Asterisk) => Ok(Expr::arithmetic(
                 ArithmeticOp::Mul,
                 parse(&tokens[0..index])?,
                 parse(&tokens[index + 1..])?,
             )),
-            Operator(Op::Slash) => Ok(Expr::Arithmetic(
+            Operator(Op::Slash) => Ok(Expr::arithmetic(
                 ArithmeticOp::Div,
                 parse(&tokens[0..index])?,
                 parse(&tokens[index + 1..])?,
             )),
-            Operator(Op::Sup) => Ok(Expr::Comparison(
+            Operator(Op::Sup) => Ok(Expr::comparison(
                 ComparisonOp::Gt,
                 parse(&tokens[0..index])?,
                 parse(&tokens[index + 1..])?,
             )),
-            Operator(Op::SupEq) => Ok(Expr::Comparison(
+            Operator(Op::SupEq) => Ok(Expr::comparison(
                 ComparisonOp::Gte,
                 parse(&tokens[0..index])?,
                 parse(&tokens[index + 1..])?,
             )),
-            Operator(Op::Inf) => Ok(Expr::Comparison(
+            Operator(Op::Inf) => Ok(Expr::comparison(
                 ComparisonOp::Lt,
                 parse(&tokens[0..index])?,
                 parse(&tokens[index + 1..])?,
             )),
-            Operator(Op::InfEq) => Ok(Expr::Comparison(
+            Operator(Op::InfEq) => Ok(Expr::comparison(
                 ComparisonOp::Lte,
                 parse(&tokens[0..index])?,
                 parse(&tokens[index + 1..])?,
             )),
-            Operator(Op::Eq) => Ok(Expr::Comparison(
+            Operator(Op::Eq) => Ok(Expr::comparison(
                 ComparisonOp::Eq,
                 parse(&tokens[0..index])?,
                 parse(&tokens[index + 1..])?,
             )),
-            Operator(Op::Neq) => Ok(Expr::Comparison(
+            Operator(Op::Neq) => Ok(Expr::comparison(
                 ComparisonOp::Neq,
                 parse(&tokens[0..index])?,
                 parse(&tokens[index + 1..])?,
@@ -162,12 +161,22 @@ pub fn parse(tokens: &[Token]) -> Result<Expr, SyntaxError> {
     // Mtching variables names and literal values
 
     match tokens {
-        [Token::Identifier(id)] if *id == "true" => Ok(Expr::BooleanLiteral(true)),
-        [Token::Identifier(id)] if *id == "false" => Ok(Expr::BooleanLiteral(false)),
-        [Token::Identifier(id)] if id.starts_with(|c: char| c.is_alphabetic()) => Ok(Expr::Var(id)),
+        [Token::Identifier(first), Token::Dot, Token::Identifier(second)] => {
+            match format!("{first}.{second}").parse::<f64>() {
+                Ok(n) => Ok(Expr::numeric_literal(n)),
+                _ => Err(SyntaxError::new(tokens[0].clone())),
+            }
+        }
+        [Token::Identifier(id), Token::Dot] => match id.parse::<f64>() {
+            Ok(n) => Ok(Expr::numeric_literal(n)),
+            _ => Err(SyntaxError::new(tokens[0].clone())),
+        },
+        [Token::Identifier(id)] if *id == "true" => Ok(Expr::boolean_literal(true)),
+        [Token::Identifier(id)] if *id == "false" => Ok(Expr::boolean_literal(false)),
+        [Token::Identifier(id)] if id.starts_with(|c: char| c.is_alphabetic()) => Ok(Expr::var(id)),
         [Token::Identifier(id)] => {
             if let Ok(n) = id.parse::<f64>() {
-                Ok(Expr::NumericLiteral(n))
+                Ok(Expr::numeric_literal(n))
             } else {
                 Err(SyntaxError::new(tokens[0].clone()))
             }
@@ -214,7 +223,7 @@ mod tests {
                 Token::Dot,
                 Token::identifier("x")
             ]),
-            Ok(Expr::Abs("x", Expr::Var("x")))
+            Ok(Expr::abs("x", Expr::var("x")))
         );
         assert_eq!(
             parse(&vec![
@@ -226,9 +235,9 @@ mod tests {
                 Token::Parentheses(Paren::Close),
                 Token::identifier("1")
             ]),
-            Ok(Expr::App(
-                Expr::Abs("x", Expr::Var("x")),
-                Expr::NumericLiteral(1.)
+            Ok(Expr::app(
+                Expr::abs("x", Expr::var("x")),
+                Expr::numeric_literal(1.)
             ))
         );
     }

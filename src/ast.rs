@@ -55,21 +55,21 @@ pub enum ComparisonOp {
 }
 
 impl Expr {
-    pub fn Abs(var: &str, body: Expr) -> Self {
+    pub fn abs(var: &str, body: Expr) -> Self {
         Expr::Abs {
             var: Rc::from(var),
             body: Rc::new(body),
         }
     }
 
-    pub fn App(function: Expr, parameter: Expr) -> Self {
+    pub fn app(function: Expr, parameter: Expr) -> Self {
         Expr::App {
             function: Rc::new(function),
             parameter: Rc::new(parameter),
         }
     }
 
-    pub fn Arithmetic(operation: ArithmeticOp, lhs: Expr, rhs: Expr) -> Self {
+    pub fn arithmetic(operation: ArithmeticOp, lhs: Expr, rhs: Expr) -> Self {
         Expr::Arithmetic {
             operation,
             lhs: Rc::new(lhs),
@@ -77,7 +77,7 @@ impl Expr {
         }
     }
 
-    pub fn Comparison(operation: ComparisonOp, lhs: Expr, rhs: Expr) -> Self {
+    pub fn comparison(operation: ComparisonOp, lhs: Expr, rhs: Expr) -> Self {
         Expr::Comparison {
             operation,
             lhs: Rc::new(lhs),
@@ -85,7 +85,7 @@ impl Expr {
         }
     }
 
-    pub fn Conditional(condition: Expr, true_branch: Expr, false_branch: Expr) -> Self {
+    pub fn conditional(condition: Expr, true_branch: Expr, false_branch: Expr) -> Self {
         Expr::Conditional {
             condition: Rc::new(condition),
             true_branch: Rc::new(true_branch),
@@ -93,17 +93,17 @@ impl Expr {
         }
     }
 
-    pub fn Var(name: &str) -> Self {
+    pub fn var(name: &str) -> Self {
         Expr::Var {
             name: Rc::from(name),
         }
     }
 
-    pub fn NumericLiteral(value: f64) -> Self {
+    pub fn numeric_literal(value: f64) -> Self {
         Expr::NumericLiteral { value }
     }
 
-    pub fn BooleanLiteral(value: bool) -> Self {
+    pub fn boolean_literal(value: bool) -> Self {
         Expr::BooleanLiteral { value }
     }
 }

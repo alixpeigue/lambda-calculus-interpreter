@@ -1,7 +1,5 @@
 use std::{error::Error, fmt::Display};
 
-use super::EvalResult;
-
 #[derive(Debug, PartialEq)]
 pub enum InterpreterError {
     TypeError {
